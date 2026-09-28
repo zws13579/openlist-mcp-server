@@ -18,7 +18,9 @@ import argparse
 import urllib.request
 import urllib.error
 import urllib.parse
+import ssl
 from typing import Any, Dict, List, Optional
+
 
 # ==========================================
 # 环境变量加载（纯标准库实现，支持当前目录 .env）
@@ -60,6 +62,7 @@ def parse_args():
     parser.add_argument("--readonly", dest="readonly", action="store_true", default=None, help="开启安全只读模式（禁止写入、删除、重命名）")
     parser.add_argument("--allowed-paths", dest="allowed_paths", default=None, help="限制操作路径白名单 (逗号分隔，如: /public,/work)")
     parser.add_argument("--confirm-remove", dest="confirm_remove", action="store_true", default=None, help="删除操作必须提供 confirm=true 确认")
+    parser.add_argument("--insecure", dest="insecure", action="store_true", default=None, help="跳过 HTTPS 证书验证（适用于内网自签名证书）")
     args, _ = parser.parse_known_args()
     return args
 
@@ -88,7 +91,21 @@ OPENLIST_ALLOWED_PATHS = [p.strip() for p in (_cli_args.allowed_paths or _env_al
 _env_confirm = os.environ.get("OPENLIST_CONFIRM_REMOVE", "").lower() in ("true", "1", "yes")
 OPENLIST_CONFIRM_REMOVE = _cli_args.confirm_remove if _cli_args.confirm_remove is not None else _env_confirm
 
+_env_insecure = os.environ.get("OPENLIST_INSECURE_SSL", "").lower() in ("true", "1", "yes")
+OPENLIST_INSECURE = _cli_args.insecure if _cli_args.insecure is not None else _env_insecure
+
+_ssl_context: Optional[ssl.SSLContext] = None
+if OPENLIST_INSECURE:
+    _ssl_context = ssl._create_unverified_context()
+
+def http_urlopen(req: urllib.request.Request, timeout: int = 25):
+    """统一执行 HTTP/HTTPS 网络请求（自动处理 SSL 校验策略）"""
+    if _ssl_context is not None:
+        return urllib.request.urlopen(req, timeout=timeout, context=_ssl_context)
+    return urllib.request.urlopen(req, timeout=timeout)
+
 _cached_token: Optional[str] = OPENLIST_TOKEN
+
 
 
 # ==========================================
@@ -124,7 +141,7 @@ def get_token() -> str:
     payload = json.dumps({"username": OPENLIST_USER, "password": OPENLIST_PASS}).encode("utf-8")
     req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with http_urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             if data.get("code") == 200:
                 _cached_token = data["data"]["token"]
@@ -147,7 +164,7 @@ def api_request(endpoint: str, payload: Optional[Dict[str, Any]] = None, method:
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
 
     try:
-        with urllib.request.urlopen(req, timeout=25) as resp:
+        with http_urlopen(req, timeout=25) as resp:
             res = json.loads(resp.read().decode("utf-8"))
             code = res.get("code")
 
@@ -157,7 +174,7 @@ def api_request(endpoint: str, payload: Optional[Dict[str, Any]] = None, method:
                 token = get_token()
                 headers["Authorization"] = token
                 req = urllib.request.Request(url, data=data, headers=headers, method=method)
-                with urllib.request.urlopen(req, timeout=25) as retry_resp:
+                with http_urlopen(req, timeout=25) as retry_resp:
                     res = json.loads(retry_resp.read().decode("utf-8"))
                     code = res.get("code")
 
@@ -323,7 +340,7 @@ def tool_fs_read(path: str, max_chars: int = 20000, password: str = "") -> str:
         return f"错误：无法获取 [{path}] 的真实内容链接。"
 
     req = urllib.request.Request(raw_url, headers=req_headers)
-    with urllib.request.urlopen(req, timeout=25) as resp:
+    with http_urlopen(req, timeout=25) as resp:
         raw_bytes = resp.read(max_chars + 200)
 
     text = raw_bytes.decode("utf-8", errors="replace")
@@ -345,7 +362,7 @@ def tool_fs_put_text(path: str, content: str) -> str:
     }
     data_bytes = content.encode("utf-8")
     req = urllib.request.Request(url, data=data_bytes, headers=headers, method="PUT")
-    with urllib.request.urlopen(req, timeout=25) as resp:
+    with http_urlopen(req, timeout=25) as resp:
         res = json.loads(resp.read().decode("utf-8"))
         if res.get("code") != 200:
             raise RuntimeError(res.get("message", "上传文件失败"))
@@ -376,7 +393,7 @@ def tool_fs_upload_local_file(local_path: str, dst_path: str) -> str:
         file_bytes = f.read()
 
     req = urllib.request.Request(url, data=file_bytes, headers=headers, method="PUT")
-    with urllib.request.urlopen(req, timeout=60) as resp:
+    with http_urlopen(req, timeout=60) as resp:
         res = json.loads(resp.read().decode("utf-8"))
         if res.get("code") != 200:
             raise RuntimeError(res.get("message", "上传文件失败"))
