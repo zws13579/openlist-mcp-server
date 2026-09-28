@@ -143,23 +143,23 @@ python3 server.py
 在任意拥有 Python 3.8+ 环境的主机、云服务器或容器中，通过通用网关启动服务（推荐配置 `--auth` 密钥以保障公网访问安全）：
 
 ```bash
-# 启动 SSE 网络服务（监听 8000 端口，并设置访问密钥）
+# 启动 SSE 网络服务（通过 --port 指定你希望监听的端口，并可设置访问密钥）
 npx -y supergateway \
-  --port 8000 \
+  --port <端口> \
   --stdio "python3 /path/to/openlist-mcp-server/server.py" \
   --auth "YOUR_SECRET_TOKEN"
 ```
 
-对外访问地址格式（`/sse` 为服务固定路由，前面替换为你的实际地址）：
-- **带域名 / 反向代理环境**: `https://<你的实际域名>/sse`（例如：`https://example.com/sse`）
-- **直连公网 IP 环境**: `http://<服务器公网IP>:8000/sse`（例如：`http://123.45.67.89:8000/sse`）
+对外访问地址格式（`/sse` 为服务固定路由，其余替换为你实际的网络地址）：
+- **域名 / 反向代理环境**: `https://<你的实际域名>/sse`（标准 443 端口，无需填写端口号）
+- **直连 IP 端口环境**: `http://<服务器公网IP>:<你指定的端口>/sse`
 
 ### 2. 客户端通用连接配置
 
 在支持远程 MCP 协议的客户端（移动端 App / Web 端 / 智能体编排平台）中配置：
 
 - **传输协议 (Transport)**: `SSE`
-- **URL**: 填入上方获取的实际地址，例如 `https://<你的实际域名>/sse` 或 `http://<服务器公网IP>:8000/sse`
+- **URL**: 填入上方获取的实际地址，例如 `https://<你的实际域名>/sse` 或 `http://<服务器公网IP>:<你指定的端口>/sse`
 - **Headers**（若启用了访问密钥）：`Authorization: Bearer YOUR_SECRET_TOKEN`
 
 

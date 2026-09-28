@@ -115,23 +115,23 @@ If your client runs on **mobile devices, web browsers**, or in an environment wh
 Launch the gateway on any host, cloud server, or container with Python 3.8+ installed (configuring an `--auth` secret key is recommended for network security):
 
 ```bash
-# Launch SSE gateway on port 8000
+# Launch SSE gateway (specify your port via --port, and set an auth token)
 npx -y supergateway \
-  --port 8000 \
+  --port <PORT> \
   --stdio "python3 /path/to/openlist-mcp-server/server.py" \
   --auth "YOUR_SECRET_TOKEN"
 ```
 
-Public endpoint format (`/sse` is the fixed route, replace the host part with your actual address):
-- **With Domain / HTTPS**: `https://<YOUR_DOMAIN>/sse` (e.g. `https://example.com/sse`)
-- **Direct Public IP**: `http://<SERVER_PUBLIC_IP>:8000/sse` (e.g. `http://123.45.67.89:8000/sse`)
+Public endpoint format (`/sse` is the fixed route, replace the rest with your actual address):
+- **Domain / HTTPS**: `https://<YOUR_DOMAIN>/sse` (default 443, no port needed)
+- **Direct IP & Port**: `http://<SERVER_PUBLIC_IP>:<YOUR_PORT>/sse`
 
 ### 2. Client Connection Setup
 
 In any client supporting remote MCP (mobile apps, web agents, orchestration platforms):
 
 - **Transport**: `SSE`
-- **URL**: Your actual address above, e.g. `https://<YOUR_DOMAIN>/sse` or `http://<SERVER_PUBLIC_IP>:8000/sse`
+- **URL**: Your actual address above, e.g. `https://<YOUR_DOMAIN>/sse` or `http://<SERVER_PUBLIC_IP>:<YOUR_PORT>/sse`
 - **Headers** (if `--auth` enabled): `Authorization: Bearer YOUR_SECRET_TOKEN`
 
 
