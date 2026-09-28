@@ -75,6 +75,8 @@ OPENLIST_URL = (
     or os.environ.get("ALIST_HOST")
     or "http://localhost:5244"
 ).rstrip("/")
+if OPENLIST_URL.endswith("/api"):
+    OPENLIST_URL = OPENLIST_URL[:-4].rstrip("/")
 
 # 认证配置
 OPENLIST_TOKEN = _cli_args.token or os.environ.get("OPENLIST_TOKEN") or os.environ.get("ALIST_TOKEN")
