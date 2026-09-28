@@ -150,17 +150,16 @@ npx -y supergateway \
   --auth "YOUR_SECRET_TOKEN"
 ```
 
-配合反向代理并配置 HTTPS 后，公网端点即为：
-```text
-https://mcp.yourdomain.com/sse
-```
+对外访问地址格式（`/sse` 为服务固定路由，前面替换为你的实际地址）：
+- **带域名 / 反向代理环境**: `https://<你的实际域名>/sse`（例如：`https://example.com/sse`）
+- **直连公网 IP 环境**: `http://<服务器公网IP>:8000/sse`（例如：`http://123.45.67.89:8000/sse`）
 
 ### 2. 客户端通用连接配置
 
 在支持远程 MCP 协议的客户端（移动端 App / Web 端 / 智能体编排平台）中配置：
 
 - **传输协议 (Transport)**: `SSE`
-- **URL**: `https://mcp.yourdomain.com/sse`（或 `http://服务器公网IP:8000/sse`）
+- **URL**: 填入上方获取的实际地址，例如 `https://<你的实际域名>/sse` 或 `http://<服务器公网IP>:8000/sse`
 - **Headers**（若启用了访问密钥）：`Authorization: Bearer YOUR_SECRET_TOKEN`
 
 

@@ -122,17 +122,16 @@ npx -y supergateway \
   --auth "YOUR_SECRET_TOKEN"
 ```
 
-When proxied via Nginx / Caddy with HTTPS, your public endpoint becomes:
-```text
-https://mcp.yourdomain.com/sse
-```
+Public endpoint format (`/sse` is the fixed route, replace the host part with your actual address):
+- **With Domain / HTTPS**: `https://<YOUR_DOMAIN>/sse` (e.g. `https://example.com/sse`)
+- **Direct Public IP**: `http://<SERVER_PUBLIC_IP>:8000/sse` (e.g. `http://123.45.67.89:8000/sse`)
 
 ### 2. Client Connection Setup
 
 In any client supporting remote MCP (mobile apps, web agents, orchestration platforms):
 
 - **Transport**: `SSE`
-- **URL**: `https://mcp.yourdomain.com/sse` (or `http://YOUR_SERVER_IP:8000/sse`)
+- **URL**: Your actual address above, e.g. `https://<YOUR_DOMAIN>/sse` or `http://<SERVER_PUBLIC_IP>:8000/sse`
 - **Headers** (if `--auth` enabled): `Authorization: Bearer YOUR_SECRET_TOKEN`
 
 
