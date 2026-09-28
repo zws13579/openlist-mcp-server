@@ -89,23 +89,20 @@ Configuration priority: `CLI Arguments > Environment Variables > Defaults`.
 
 ### Claude Desktop
 
-Add to `claude_desktop_config.json`:
+**Recommended**: Store credentials securely in `.env` (with `chmod 600 .env`). The server automatically detects and loads it without exposing plaintext secrets in `args`:
 
 ```json
 {
   "mcpServers": {
     "openlist": {
       "command": "python3",
-      "args": [
-        "/path/to/openlist-mcp-server/server.py",
-        "--url", "http://localhost:5244",
-        "--username", "admin",
-        "--password", "YOUR_PASSWORD"
-      ]
+      "args": ["/path/to/openlist-mcp-server/server.py"]
     }
   }
 }
 ```
+
+> **Security Note**: Using `.env` prevents exposing credentials to operating system process monitors (`ps aux`) and command-line shell history. If configuring dynamic environment variables, pass `OPENLIST_TOKEN` via the `env` dictionary instead of raw passwords.
 
 ---
 
@@ -153,6 +150,15 @@ python3 test_server.py
 # Full integration test against your instance
 python3 test_server.py --password YOUR_PASSWORD
 ```
+
+---
+
+## 🔒 Security & Privacy Best Practices
+
+1. **Avoid CLI Passwords**: Ordinary users on Linux/macOS can inspect running process arguments via `ps aux`. Always use `.env` (`chmod 600 .env`) or client `env` fields.
+2. **Prefer Static API Tokens (`OPENLIST_TOKEN`)**: Generate tokens from the OpenList admin settings to avoid exposing root credentials.
+3. **Password Masking**: `fsListShares` automatically masks share passwords as `[***]` to prevent unauthorized leakage into LLM contexts or logs.
+4. **Defense in Depth**: Use `--readonly` for read-only agents, `--allowed-paths` to lock down storage subtrees, and `--confirm-remove` to prevent unintended data loss from LLM hallucinations.
 
 ---
 

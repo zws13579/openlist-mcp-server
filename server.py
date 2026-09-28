@@ -229,7 +229,7 @@ def tool_fs_get(path: str, password: str = "") -> str:
         f"直链 (raw_url): {data.get('raw_url', '无')}",
     ]
     if data.get("sign"):
-        lines.append(f"直链签名: {data.get('sign')}")
+        lines.append("直链签名: [已签名受保护]")
     if data.get("readme"):
         lines.append(f"说明文档:\n{data.get('readme')}")
     return "\n".join(lines)
@@ -307,10 +307,22 @@ def tool_fs_read(path: str, max_chars: int = 20000, password: str = "") -> str:
         return f"提示：文件大小为 {format_size(size)}，超过安全读取限制（10MB），建议直接获取直链下载。"
 
     raw_url = data.get("raw_url")
+    req_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+
+    # 优先获取底层存储驱动指定的推荐下载头 (如防盗链驱动)
+    try:
+        link_data = api_request("fs/link", {"path": path, "password": password})
+        if link_data.get("url"):
+            raw_url = link_data["url"]
+        for k, v in (link_data.get("header") or {}).items():
+            req_headers[k] = v[0] if isinstance(v, list) else v
+    except Exception:
+        pass
+
     if not raw_url:
         return f"错误：无法获取 [{path}] 的真实内容链接。"
 
-    req = urllib.request.Request(raw_url, headers={"User-Agent": "OpenList-MCP/1.0"})
+    req = urllib.request.Request(raw_url, headers=req_headers)
     with urllib.request.urlopen(req, timeout=25) as resp:
         raw_bytes = resp.read(max_chars + 200)
 
@@ -496,7 +508,7 @@ def tool_fs_list_shares() -> str:
     lines = [f"当前有效分享列表（共 {len(items)} 个）："]
     for s in items:
         status = "🔴 已禁用" if s.get("disabled") else "🟢 正常"
-        pwd_info = f"密码: {s.get('pwd')}" if s.get("pwd") else "公开无密"
+        pwd_info = "受密码保护 [***]" if s.get("pwd") else "公开无密"
         lines.append(
             f"  - [{s.get('id')}] {status} | 路径: {', '.join(s.get('files', []))} | {pwd_info} | 访问量: {s.get('accessed', 0)}"
         )

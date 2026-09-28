@@ -89,6 +89,8 @@ python3 server.py
 
 ### 1. Claude Desktop
 
+推荐方式：在项目根目录配置 `.env`（权限 `chmod 600 .env`），服务端将自动静默读取，无需在 `args` 中传递任何敏感凭据：
+
 在配置文件中添加（macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`；Windows: `%APPDATA%\Claude\claude_desktop_config.json`）：
 
 ```json
@@ -96,25 +98,20 @@ python3 server.py
   "mcpServers": {
     "openlist": {
       "command": "python3",
-      "args": [
-        "/绝对路径/openlist-mcp-server/server.py",
-        "--url", "http://localhost:5244",
-        "--username", "admin",
-        "--password", "你的OpenList密码"
-      ]
+      "args": ["/绝对路径/openlist-mcp-server/server.py"]
     }
   }
 }
 ```
 
-> **只读安全运行模式示例**：如果希望 AI 仅用于检索和阅读云盘资料，避免误操作，可加上 `--readonly` 参数。
+> **安全提示**：使用 `.env` 文件可杜绝系统进程列表 (`ps aux`) 或 Shell 历史暴露明文密码的风险。若使用动态环境变量，推荐通过 `env` 字段传递 `OPENLIST_TOKEN`（后台生成的静态 Token）而非原始管理员密码。
 
 ### 2. Cursor / Windsurf
 
 在 Cursor 设置中搜索 `MCP`，添加新 Server：
 - **Name**: `openlist`
 - **Type**: `command`
-- **Command**: `python3 /绝对路径/openlist-mcp-server/server.py --url http://localhost:5244 --username admin --password 你的密码`
+- **Command**: `python3 /绝对路径/openlist-mcp-server/server.py`
 
 ### 3. VS Code (Continue / Roo-Code / Cline)
 
@@ -128,8 +125,7 @@ python3 server.py
       "args": ["/绝对路径/openlist-mcp-server/server.py"],
       "env": {
         "OPENLIST_URL": "http://localhost:5244",
-        "OPENLIST_USERNAME": "admin",
-        "OPENLIST_PASSWORD": "你的密码"
+        "OPENLIST_TOKEN": "你的静态API_TOKEN"
       }
     }
   }
@@ -202,6 +198,26 @@ python3 test_server.py --password 你的密码
 - [x] `--readonly` 安全只读模式写拦截防护
 - [x] `--allowed-paths` 越界路径访问防御拦截
 - [x] `--confirm-remove` 防误删确认拦截
+
+---
+
+## 🔒 安全与隐私最佳实践
+
+为了保障生产环境下的多源云存储安全，建议遵循以下安全规范：
+
+1. **避免在进程命令行 (`args`) 传递明文密码**：
+   - 绝大多数操作系统下，普通用户可通过 `ps aux` 查看当前正在运行进程的完整命令行参数。
+   - **推荐**：使用项目内置支持的 `.env` 本地私有文件，或在客户端配置的 `env` 字段中传递。
+   - 将 `.env` 设为严格只读权限：`chmod 600 .env`。
+2. **优先使用静态 API Token (`OPENLIST_TOKEN`)**：
+   - 建议在 OpenList 后台（设置 -> 基础设置 -> 生成 Token）创建专用的 API 令牌，替代原始管理员明文密码。
+3. **分享密码与元数据脱敏**：
+   - `fsListShares` 已默认脱敏已有分享链接的提取密码（展示为 `[***]`），防止智能体或第三方日志记录未经授权的访问凭据。
+   - `fsGet` 默认屏蔽敏感签名原始串，避免签名参数进入大模型上下文。
+4. **按需启用沙箱防御机制**：
+   - **公共/只读场景**：传入 `--readonly`，严禁智能体执行任何覆写、重命名或删除动作。
+   - **受限目录场景**：传入 `--allowed-paths "/public,/workspace"`，严禁智能体跳出白名单目录访问敏感分区。
+   - **重要数据场景**：传入 `--confirm-remove`，任何删除操作必须显式传参 `confirm=true`，有效杜绝模型幻觉导致的数据丢失。
 
 ---
 
