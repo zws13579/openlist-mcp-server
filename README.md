@@ -134,6 +134,38 @@ python3 server.py
 
 ---
 
+## 🌐 远程网络模式 (SSE 接入指南)
+
+若你的客户端运行在**移动设备、Web 浏览器**，或所在环境**无法直接执行本地 Python 脚本**，可通过 MCP 规范标准的 **SSE (Server-Sent Events)** 网络协议远程连接：
+
+### 1. 启动远程 SSE 网关服务
+
+在任意拥有 Python 3.8+ 环境的主机、云服务器或容器中，通过通用网关启动服务（推荐配置 `--auth` 密钥以保障公网访问安全）：
+
+```bash
+# 启动 SSE 网络服务（监听 8000 端口，并设置访问密钥）
+npx -y supergateway \
+  --port 8000 \
+  --stdio "python3 /path/to/openlist-mcp-server/server.py" \
+  --auth "YOUR_SECRET_TOKEN"
+```
+
+配合反向代理并配置 HTTPS 后，公网端点即为：
+```text
+https://mcp.yourdomain.com/sse
+```
+
+### 2. 客户端通用连接配置
+
+在支持远程 MCP 协议的客户端（移动端 App / Web 端 / 智能体编排平台）中配置：
+
+- **传输协议 (Transport)**: `SSE`
+- **URL**: `https://mcp.yourdomain.com/sse`（或 `http://服务器公网IP:8000/sse`）
+- **Headers**（若启用了访问密钥）：`Authorization: Bearer YOUR_SECRET_TOKEN`
+
+
+---
+
 ## 🛠️ 工具清单 (Tool Reference)
 
 本服务提供 23 款工具，同时支持官方规范命名、智能体命名与平替 snake_case 别名：

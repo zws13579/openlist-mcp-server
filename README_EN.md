@@ -106,6 +106,36 @@ Configuration priority: `CLI Arguments > Environment Variables > Defaults`.
 
 ---
 
+## 🌐 Remote Access without Local Python (SSE Mode)
+
+If your client runs on **mobile devices, web browsers**, or in an environment where **local Python execution is restricted**, connect via the standard **SSE (Server-Sent Events)** protocol:
+
+### 1. Start Remote SSE Gateway
+
+Launch the gateway on any host, cloud server, or container with Python 3.8+ installed (configuring an `--auth` secret key is recommended for network security):
+
+```bash
+# Launch SSE gateway on port 8000
+npx -y supergateway \
+  --port 8000 \
+  --stdio "python3 /path/to/openlist-mcp-server/server.py" \
+  --auth "YOUR_SECRET_TOKEN"
+```
+
+When proxied via Nginx / Caddy with HTTPS, your public endpoint becomes:
+```text
+https://mcp.yourdomain.com/sse
+```
+
+### 2. Client Connection Setup
+
+In any client supporting remote MCP (mobile apps, web agents, orchestration platforms):
+
+- **Transport**: `SSE`
+- **URL**: `https://mcp.yourdomain.com/sse` (or `http://YOUR_SERVER_IP:8000/sse`)
+- **Headers** (if `--auth` enabled): `Authorization: Bearer YOUR_SECRET_TOKEN`
+
+
 ## 🛠️ Tool Reference (23 Tools)
 
 ### 1. Exploration & Reading
